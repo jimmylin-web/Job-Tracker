@@ -60,3 +60,19 @@ describe("prospect creation validation", () => {
     expect(result.valid).toBe(false);
   });
 });
+test("accepts prospect with a valid deadline date", () => {
+  const result = validateProspect({
+    companyName: "Google",
+    roleTitle: "Software Engineer",
+    deadline: "2027-12-31",
+  });
+  expect(result.valid).toBe(true);
+});
+
+test("accepts prospect without a deadline", () => {
+  const result = validateProspect({
+    companyName: "Google",
+    roleTitle: "Software Engineer",
+  });
+  expect(result.valid).toBe(true);
+});

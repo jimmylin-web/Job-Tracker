@@ -113,6 +113,21 @@ export function ProspectCard({ prospect }: { prospect: Prospect }) {
           </p>
         )}
 
+        {prospect.deadline && (() => {
+          const deadlineDate = new Date(prospect.deadline + 'T00:00:00');
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          const daysUntil = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          const nonFinalStatuses = ['Bookmarked', 'Applied', 'Phone Screen', 'Interviewing'];
+          const isDueSoon = daysUntil >= 0 && daysUntil <= 7 && nonFinalStatuses.includes(prospect.status);
+          return (
+            <p className="text-xs text-muted-foreground" data-testid={`text-deadline-${prospect.id}`}>
+              Deadline: {prospect.deadline}
+              {isDueSoon && <span className="ml-1 text-orange-500 font-semibold">⚠ Due Soon</span>}
+            </p>
+          );
+        })()}
+
         {prospect.jobUrl && (
           <a
             href={prospect.jobUrl}
