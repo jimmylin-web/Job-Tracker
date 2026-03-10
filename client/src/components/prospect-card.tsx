@@ -107,6 +107,12 @@ export function ProspectCard({ prospect }: { prospect: Prospect }) {
           <InterestIndicator level={prospect.interestLevel} />
         </div>
 
+        {prospect.targetSalary && (
+          <p className="text-xs text-muted-foreground" data-testid={`text-target-salary-${prospect.id}`}>
+            Target: ${prospect.targetSalary.toLocaleString()}
+          </p>
+        )}
+
         {prospect.jobUrl && (
           <a
             href={prospect.jobUrl}
