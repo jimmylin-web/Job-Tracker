@@ -186,6 +186,21 @@ export function AddProspectForm({ onSuccess }: { onSuccess?: () => void }) {
           )}
         />
 
+
+          <FormField
+            control={form.control}
+            name="deadline"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Application Deadline (optional)</FormLabel>
+                <FormControl>
+                  <Input type="date" data-testid="input-deadline" {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
         <FormField
           control={form.control}
           name="notes"
