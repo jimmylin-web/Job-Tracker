@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Prospect } from "@shared/schema";
-import { STATUSES } from "@shared/schema";
+import { STATUSES, INTEREST_LEVELS } from "@shared/schema";
 import { ProspectCard } from "@/components/prospect-card";
 import { AddProspectForm } from "@/components/add-prospect-form";
-import { Briefcase, Plus } from "lucide-react";
+import { Briefcase, Plus, Flame, ThumbsUp, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const columnColors: Record<string, string> = {
   Bookmarked: "bg-blue-500",
@@ -26,15 +33,37 @@ const columnColors: Record<string, string> = {
   Withdrawn: "bg-gray-500",
 };
 
+function getInterestIcon(level: string) {
+  switch (level) {
+    case "High":
+      return "🔥";
+    case "Medium":
+      return "👍";
+    case "Low":
+      return "🤷";
+    default:
+      return "";
+  }
+}
+
 function KanbanColumn({
   status,
   prospects,
   isLoading,
+  selectedFilter,
+  onFilterChange,
 }: {
   status: string;
   prospects: Prospect[];
   isLoading: boolean;
+  selectedFilter: string;
+  onFilterChange: (value: string) => void;
 }) {
+  const filteredProspects =
+    selectedFilter === "All"
+      ? prospects
+      : prospects.filter((p) => p.interestLevel === selectedFilter);
+
   return (
     <div
       className="flex flex-col min-w-[260px] max-w-[320px] w-full bg-muted/40 rounded-md"
@@ -43,12 +72,25 @@ function KanbanColumn({
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/50">
         <div className={`w-2 h-2 rounded-full ${columnColors[status] || "bg-gray-400"}`} />
         <h3 className="text-sm font-semibold truncate">{status}</h3>
+        <Select value={selectedFilter} onValueChange={onFilterChange}>
+          <SelectTrigger className="w-[100px] h-7 text-xs ml-auto">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All</SelectItem>
+            {INTEREST_LEVELS.map((level) => (
+              <SelectItem key={level} value={level}>
+                {getInterestIcon(level)} {level}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Badge
           variant="secondary"
-          className="ml-auto text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center no-default-active-elevate"
+          className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] flex items-center justify-center no-default-active-elevate"
           data-testid={`badge-count-${status.replace(/\s+/g, "-").toLowerCase()}`}
         >
-          {prospects.length}
+          {filteredProspects.length}
         </Badge>
       </div>
       <div className="flex-1 overflow-y-auto px-2 py-2">
@@ -58,12 +100,12 @@ function KanbanColumn({
               <Skeleton className="h-28 rounded-md" />
               <Skeleton className="h-20 rounded-md" />
             </>
-          ) : prospects.length === 0 ? (
+          ) : filteredProspects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center" data-testid={`empty-${status.replace(/\s+/g, "-").toLowerCase()}`}>
               <p className="text-xs text-muted-foreground">No prospects</p>
             </div>
           ) : (
-            prospects.map((prospect) => (
+            filteredProspects.map((prospect) => (
               <ProspectCard key={prospect.id} prospect={prospect} />
             ))
           )}
@@ -75,6 +117,15 @@ function KanbanColumn({
 
 export default function Home() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
+    STATUSES.reduce(
+      (acc, status) => {
+        acc[status] = "All";
+        return acc;
+      },
+      {} as Record<string, string>,
+    ),
+  );
 
   const { data: prospects, isLoading } = useQuery<Prospect[]>({
     queryKey: ["/api/prospects"],
@@ -89,6 +140,13 @@ export default function Home() {
   );
 
   const totalCount = prospects?.length ?? 0;
+
+  const handleFilterChange = (status: string, filterValue: string) => {
+    setColumnFilters((prev) => ({
+      ...prev,
+      [status]: filterValue,
+    }));
+  };
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -134,6 +192,8 @@ export default function Home() {
               status={status}
               prospects={groupedByStatus[status] || []}
               isLoading={isLoading}
+              selectedFilter={columnFilters[status]}
+              onFilterChange={(value) => handleFilterChange(status, value)}
             />
           ))}
         </div>
